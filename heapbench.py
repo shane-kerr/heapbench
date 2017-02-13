@@ -7,17 +7,17 @@ published API in order to check the two fundamental operations:
 * Adding something to the heap.
 * Removing the smallest (or largest) item from the heap.
 
-Additionally, we check the following operation:
-
-* Convert an unordered list into a heap.
-
 We do NOT check the operations:
 
+* Convert an unordered list into a heap.
 * Remove an arbitrary item from the heap.
 * Change the priority of an item on the heap.
 
-On a basic heap, both of these require a linear search through the
-heap and so are not the main strength of a heap implementation.
+Converting an unordered list into a heap may be interesting, but
+not so much for implementing a cache.
+
+On a basic heap, both remove/change require a linear search through
+the heap and so are not the main strength of a heap implementation.
 
 # How To Benchmark
 
@@ -59,6 +59,21 @@ def insert_heapdict(items):
     h = heapdict.heapdict()
     for item in items:
         h[item] = item[0]
+    return h
+
+
+def bench_remove_heapdict(loops, items):
+    """insert the items into a heapdict object, then time removing them"""
+    range_it = range(loops)
+    time_total = 0
+    for loops in range_it:
+        h = insert_heapdict(items)
+        t0 = perf.perf_counter()
+        while len(h) > 0:
+            h.popitem()
+        t1 = perf.perf_counter()
+        time_total += t1 - t0
+    return time_total
 
 
 def insert_heapq(items):
@@ -66,6 +81,44 @@ def insert_heapq(items):
     h = []
     for item in items:
         heapq.heappush(h, item)
+    return h
+
+
+def bench_remove_heapq(loops, items):
+    """insert the items into a heap list, then time removing them"""
+    range_it = range(loops)
+    time_total = 0
+    for loops in range_it:
+        h = insert_heapq(items)
+        t0 = perf.perf_counter()
+        while h:
+            heapq.heappop(h)
+        t1 = perf.perf_counter()
+        time_total += t1 - t0
+    return time_total
+
+
+def insert_pyheapq(items):
+    """insert the items into a list using a Python-only version of heapq"""
+    h = []
+    for item in items:
+        pyheapq.heappush(h, item)
+    return h
+
+
+def bench_remove_pyheapq(loops, items):
+    """insert the items into a heap list with Python-only version of heapq,
+       then time removing them"""
+    range_it = range(loops)
+    time_total = 0
+    for loops in range_it:
+        h = insert_pyheapq(items)
+        t0 = perf.perf_counter()
+        while h:
+            pyheapq.heappop(h)
+        t1 = perf.perf_counter()
+        time_total += t1 - t0
+    return time_total
 
 
 def insert_binaryheap(items):
@@ -73,6 +126,21 @@ def insert_binaryheap(items):
     h = binaryheap.new_min_heap()
     for item in items:
         h.add(item)
+    return h
+
+
+def bench_remove_binaryheap(loops, items):
+    """insert the items into a binaryheap, then time removing them"""
+    range_it = range(loops)
+    time_total = 0
+    for loops in range_it:
+        h = insert_binaryheap(items)
+        t0 = perf.perf_counter()
+        while h:
+            h.extract_one()
+        t1 = perf.perf_counter()
+        time_total += t1 - t0
+    return time_total
 
 
 def insert_heapqueue(items):
@@ -87,13 +155,21 @@ def insert_heapqueue(items):
     h = heapqueue.HeapQueue(**kwargs)
     for item in items:
         h.push(item)
+    return h
 
 
-def insert_pyheapq(items):
-    """insert the items into a list using a Python-only version of heapq"""
-    h = []
-    for item in items:
-        pyheapq.heappush(h, item)
+def bench_remove_heapqueue(loops, items):
+    """insert the items into a heapqueue, then time removing them"""
+    range_it = range(loops)
+    time_total = 0
+    for loops in range_it:
+        h = insert_heapqueue(items)
+        t0 = perf.perf_counter()
+        while h.pop() is not None:
+            pass
+        t1 = perf.perf_counter()
+        time_total += t1 - t0
+    return time_total
 
 
 def insert_fibheap(items):
@@ -101,6 +177,22 @@ def insert_fibheap(items):
     h = fibonacci_heap_mod.Fibonacci_heap()
     for item in items:
         h.enqueue(item, item[0])
+    return h
+
+
+def bench_remove_fibheap(loops, items):
+    """insert the items into a Fibonacci heap, then time removing them"""
+    range_it = range(loops)
+    time_total = 0
+    for loops in range_it:
+        h = insert_fibheap(items)
+        t0 = perf.perf_counter()
+        while h:
+            h.dequeue_min()
+        t1 = perf.perf_counter()
+        time_total += t1 - t0
+    return time_total
+
 
 #
 # Now do the actual benchmarking, using the perf module.
@@ -114,12 +206,12 @@ runner.bench_func('heapdict[] ascending, N=1K',
                   insert_heapdict, items)
 runner.bench_func('heapq.heappush() ascending, N=1K',
                   insert_heapq, items)
+runner.bench_func('pyheapq.heappush() ascending, N=1K',
+                  insert_pyheapq, items)
 runner.bench_func('binaryheap.add() ascending, N=1K',
                   insert_binaryheap, items)
 runner.bench_func('heapqueue.push() ascending, N=1K',
                   insert_heapqueue, items)
-runner.bench_func('pyheapq.heappush() ascending, N=1K',
-                  insert_pyheapq, items)
 runner.bench_func('fibonacci_heap_mod.enqueue() ascending, N=1K',
                   insert_fibheap, items)
 
@@ -129,12 +221,12 @@ runner.bench_func('heapdict[] descending, N=1K',
                   insert_heapdict, items)
 runner.bench_func('heapq.heappush() descending, N=1K',
                   insert_heapq, items)
+runner.bench_func('pyheapq.heappush() descending, N=1K',
+                  insert_pyheapq, items)
 runner.bench_func('binaryheap.add() descending, N=1K',
                   insert_binaryheap, items)
 runner.bench_func('heapqueue.push() descending, N=1K',
                   insert_heapqueue, items)
-runner.bench_func('pyheapq.heappush() descending, N=1K',
-                  insert_pyheapq, items)
 runner.bench_func('fibonacci_heap_mod.enqueue() descending, N=1K',
                   insert_fibheap, items)
 
@@ -144,12 +236,12 @@ runner.bench_func('heapdict[] random order, N=1K',
                   insert_heapdict, items)
 runner.bench_func('heapq.heappush() random order, N=1K',
                   insert_heapq, items)
+runner.bench_func('pyheapq.heappush() random order, N=1K',
+                  insert_pyheapq, items)
 runner.bench_func('binaryheap.add() random order, N=1K',
                   insert_binaryheap, items)
 runner.bench_func('heapqueue.push() random order, N=1K',
                   insert_heapqueue, items)
-runner.bench_func('pyheapq.heappush() random order, N=1K',
-                  insert_pyheapq, items)
 runner.bench_func('fibonacci_heap_mod.enqueue() random order, N=1K',
                   insert_fibheap, items)
 
@@ -159,12 +251,12 @@ runner.bench_func('heapdict[] ascending, N=1M',
                   insert_heapdict, items)
 runner.bench_func('heapq.heappush() ascending, N=1M',
                   insert_heapq, items)
+runner.bench_func('pyheapq.heappush() ascending, N=1M',
+                  insert_pyheapq, items)
 runner.bench_func('binaryheap.add() ascending, N=1M',
                   insert_binaryheap, items)
 runner.bench_func('heapqueue.push() ascending, N=1M',
                   insert_heapqueue, items)
-runner.bench_func('pyheapq.heappush() ascending, N=1M',
-                  insert_pyheapq, items)
 runner.bench_func('fibonacci_heap_mod.enqueue() ascending, N=1M',
                   insert_fibheap, items)
 
@@ -174,12 +266,12 @@ runner.bench_func('heapdict[] descending, N=1M',
                   insert_heapdict, items)
 runner.bench_func('heapq.heappush() descending, N=1M',
                   insert_heapq, items)
+runner.bench_func('pyheapq.heappush() descending, N=1M',
+                  insert_pyheapq, items)
 runner.bench_func('binaryheap.add() descending, N=1M',
                   insert_binaryheap, items)
 runner.bench_func('heapqueue.push() descending, N=1M',
                   insert_heapqueue, items)
-runner.bench_func('pyheapq.heappush() descending, N=1M',
-                  insert_pyheapq, items)
 runner.bench_func('fibonacci_heap_mod.enqueue() descending, N=1M',
                   insert_fibheap, items)
 
@@ -189,11 +281,41 @@ runner.bench_func('heapdict[] random order, N=1M',
                   insert_heapdict, items)
 runner.bench_func('heapq.heappush() random order, N=1M',
                   insert_heapq, items)
+runner.bench_func('pyheapq.heappush() random order, N=1M',
+                  insert_pyheapq, items)
 runner.bench_func('binaryheap.add() random order, N=1M',
                   insert_binaryheap, items)
 runner.bench_func('heapqueue.push() random order, N=1M',
                   insert_heapqueue, items)
-runner.bench_func('pyheapq.heappush() random order, N=1M',
-                  insert_pyheapq, items)
 runner.bench_func('fibonacci_heap_mod.enqueue() random order, N=1M',
                   insert_fibheap, items)
+
+# Build a small array, see how long it takes to remove this.
+items = [(n,) for n in range(1000)]
+runner.bench_sample_func('heapdict.popitem(), N=1K',
+                         bench_remove_heapdict, items, inner_loops=10)
+runner.bench_sample_func('heapq.heappop(), N=1K',
+                         bench_remove_heapq, items, inner_loops=10)
+runner.bench_sample_func('pyheapq.heappop(), N=1K',
+                         bench_remove_pyheapq, items, inner_loops=10)
+runner.bench_sample_func('binaryheap.extract_one(), N=1K',
+                         bench_remove_binaryheap, items, inner_loops=10)
+runner.bench_sample_func('heapqueue.pop(), N=1K',
+                         bench_remove_heapqueue, items, inner_loops=10)
+runner.bench_sample_func('fibonacci_heap_mod.dequeue_min(), N=1K',
+                         bench_remove_fibheap, items, inner_loops=10)
+
+# Build a big array, see how long it takes to remove this.
+items = [(n,) for n in range(1000000)]
+runner.bench_sample_func('heapdict.popitem(), N=1M',
+                         bench_remove_heapdict, items, inner_loops=10)
+runner.bench_sample_func('heapq.heappop(), N=1M',
+                         bench_remove_heapq, items, inner_loops=10)
+runner.bench_sample_func('pyheapq.heappop(), N=1M',
+                         bench_remove_pyheapq, items, inner_loops=10)
+runner.bench_sample_func('binaryheap.extract_one(), N=1M',
+                         bench_remove_binaryheap, items, inner_loops=10)
+runner.bench_sample_func('heapqueue.pop(), N=1M',
+                         bench_remove_heapqueue, items, inner_loops=10)
+runner.bench_sample_func('fibonacci_heap_mod.dequeue_min(), N=1M',
+                         bench_remove_fibheap, items, inner_loops=10)

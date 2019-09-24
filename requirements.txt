@@ -3,3 +3,7 @@ pyperf
 binaryheap
 fibonacci-heap-mod
 heapdict
+libheap
+fibheap
+bhpq
+heapy

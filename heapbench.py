@@ -218,7 +218,7 @@ def bench_remove_fibheap(loops, items):
 
 def insert_bhpq(items):
     """insert the items into a bhpq"""
-    h = bhpq.BinaryHeapPriorityQueue(prefer=max)
+    h = bhpq.BinaryHeapPriorityQueue(prefer=min)
     for item in items:
         h.add(item)
     return h
@@ -305,6 +305,7 @@ if have_bhpq:
           "name_remove": 'bhpq.pop()',
           "remove": bench_remove_bhpq, },
     )
+
 
 #
 # Now do the actual benchmarking, using the perf module.
